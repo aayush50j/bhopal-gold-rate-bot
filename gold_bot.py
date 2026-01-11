@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 CHAT_ID = os.getenv("CHAT_ID")
 
-URL = "https://www.goodreturns.in/gold-rates/bhopal.html"
+URL = "https://www.livemint.com/gold-prices/bhopal"
 
 def fetch_gold_rate():
     headers = {
@@ -17,47 +17,37 @@ def fetch_gold_rate():
     price_24k = None
     price_22k = None
 
-    tds = soup.find_all("td")
+    # LiveMint clearly labels karat values
+    for div in soup.find_all("div"):
+        text = div.get_text(" ", strip=True)
 
-    for i, td in enumerate(tds):
-        text = td.get_text(strip=True)
+        if "24 Carat" in text and "₹" in text:
+            price_24k = text.split("₹")[-1].split()[0]
 
-        if "24" in text and price_24k is None:
-            # price is usually 1–2 cells after purity
-            for next_td in tds[i+1:i+4]:
-                val = next_td.get_text(strip=True)
-                if "₹" in val:
-                    price_24k = val
-                    break
-
-        if "22" in text and price_22k is None:
-            for next_td in tds[i+1:i+4]:
-                val = next_td.get_text(strip=True)
-                if "₹" in val:
-                    price_22k = val
-                    break
+        if "22 Carat" in text and "₹" in text:
+            price_22k = text.split("₹")[-1].split()[0]
 
     if not price_24k or not price_22k:
-        raise Exception("Gold prices not extracted correctly")
+        raise Exception("Failed to extract gold rates from LiveMint")
 
     return price_24k, price_22k
 
 def send_telegram(message):
-    api = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
     data = {
         "chat_id": CHAT_ID,
         "text": message
     }
-    requests.post(api, data=data)
+    requests.post(url, data=data)
 
 if __name__ == "__main__":
     p24, p22 = fetch_gold_rate()
 
     msg = (
-        "🏅 Bhopal Gold Rate (Today)\n\n"
-        f"24K (10g): {p24}\n"
-        f"22K (10g): {p22}\n\n"
-        "Source: GoodReturns"
+        "🏅 Bhopal Gold Rate (Per 10g)\n\n"
+        f"24K: ₹{p24}\n"
+        f"22K: ₹{p22}\n\n"
+        "Source: LiveMint"
     )
 
     send_telegram(msg)
