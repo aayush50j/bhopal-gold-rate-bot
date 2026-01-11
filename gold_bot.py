@@ -14,27 +14,28 @@ def fetch_gold_rate():
     response = requests.get(URL, headers=headers, timeout=15)
     soup = BeautifulSoup(response.text, "html.parser")
 
-    table = soup.find("table")
-    if not table:
-        raise Exception("Gold rate table not found")
-
-    rows = table.find_all("tr")
-
     price_24k = None
     price_22k = None
 
-    for row in rows:
-        cols = row.find_all("td")
-        if len(cols) < 3:
-            continue
+    tds = soup.find_all("td")
 
-        purity = cols[0].get_text(strip=True)
-        today_price = cols[2].get_text(strip=True)
+    for i, td in enumerate(tds):
+        text = td.get_text(strip=True)
 
-        if "24" in purity:
-            price_24k = today_price
-        elif "22" in purity:
-            price_22k = today_price
+        if "24" in text and price_24k is None:
+            # price is usually 1–2 cells after purity
+            for next_td in tds[i+1:i+4]:
+                val = next_td.get_text(strip=True)
+                if "₹" in val:
+                    price_24k = val
+                    break
+
+        if "22" in text and price_22k is None:
+            for next_td in tds[i+1:i+4]:
+                val = next_td.get_text(strip=True)
+                if "₹" in val:
+                    price_22k = val
+                    break
 
     if not price_24k or not price_22k:
         raise Exception("Gold prices not extracted correctly")
