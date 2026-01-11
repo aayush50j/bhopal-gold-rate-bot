@@ -14,21 +14,30 @@ def fetch_gold_rate():
     response = requests.get(URL, headers=headers, timeout=15)
     soup = BeautifulSoup(response.text, "html.parser")
 
-    # Find rows containing gold prices
-    rows = soup.find_all("tr")
+    table = soup.find("table")
+    if not table:
+        raise Exception("Gold rate table not found")
+
+    rows = table.find_all("tr")
 
     price_24k = None
     price_22k = None
 
     for row in rows:
-        text = row.get_text(" ", strip=True)
-        if "24K" in text and "10" in text:
-            price_24k = text
-        if "22K" in text and "10" in text:
-            price_22k = text
+        cols = row.find_all("td")
+        if len(cols) < 2:
+            continue
+
+        purity = cols[0].get_text(strip=True)
+        price = cols[1].get_text(strip=True)
+
+        if "24" in purity:
+            price_24k = price
+        elif "22" in purity:
+            price_22k = price
 
     if not price_24k or not price_22k:
-        raise Exception("Gold rate not found — page structure may have changed")
+        raise Exception("Gold prices not extracted correctly")
 
     return price_24k, price_22k
 
@@ -45,8 +54,8 @@ if __name__ == "__main__":
 
     msg = (
         "🏅 Bhopal Gold Rate (Today)\n\n"
-        f"{p24}\n"
-        f"{p22}\n\n"
+        f"24K: {p24}\n"
+        f"22K: {p22}\n\n"
         "Source: GoodReturns"
     )
 
