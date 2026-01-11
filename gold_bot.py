@@ -1,16 +1,53 @@
 import os
 import requests
+from bs4 import BeautifulSoup
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 CHAT_ID = os.getenv("CHAT_ID")
 
-def send_test_message():
-    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+URL = "https://www.goodreturns.in/gold-rates/bhopal.html"
+
+def fetch_gold_rate():
+    headers = {
+        "User-Agent": "Mozilla/5.0"
+    }
+    response = requests.get(URL, headers=headers, timeout=15)
+    soup = BeautifulSoup(response.text, "html.parser")
+
+    # Find rows containing gold prices
+    rows = soup.find_all("tr")
+
+    price_24k = None
+    price_22k = None
+
+    for row in rows:
+        text = row.get_text(" ", strip=True)
+        if "24K" in text and "10" in text:
+            price_24k = text
+        if "22K" in text and "10" in text:
+            price_22k = text
+
+    if not price_24k or not price_22k:
+        raise Exception("Gold rate not found — page structure may have changed")
+
+    return price_24k, price_22k
+
+def send_telegram(message):
+    api = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
     data = {
         "chat_id": CHAT_ID,
-        "text": "✅ Telegram bot connected successfully!"
+        "text": message
     }
-    requests.post(url, data=data)
+    requests.post(api, data=data)
 
 if __name__ == "__main__":
-    send_test_message()
+    p24, p22 = fetch_gold_rate()
+
+    msg = (
+        "🏅 Bhopal Gold Rate (Today)\n\n"
+        f"{p24}\n"
+        f"{p22}\n\n"
+        "Source: GoodReturns"
+    )
+
+    send_telegram(msg)
