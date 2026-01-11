@@ -1,13 +1,13 @@
 import os
 import requests
 
-BOT_TOKEN = os.getenv("8541609986:AAEVQpXwF8AXemsZRvxyEjrypxtGr-YHP2A")
-CHAT_ID = os.getenv("850468837")
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+CHAT_ID = os.getenv("CHAT_ID")
 
 def send_test_message():
-    url = f"https://api.telegram.org/bot{8541609986:AAEVQpXwF8AXemsZRvxyEjrypxtGr-YHP2A}/sendMessage"
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
     data = {
-        "chat_id": 850468837,
+        "chat_id": CHAT_ID,
         "text": "✅ Telegram bot connected successfully!"
     }
     requests.post(url, data=data)
