@@ -25,16 +25,16 @@ def fetch_gold_rate():
 
     for row in rows:
         cols = row.find_all("td")
-        if len(cols) < 2:
+        if len(cols) < 3:
             continue
 
         purity = cols[0].get_text(strip=True)
-        price = cols[1].get_text(strip=True)
+        today_price = cols[2].get_text(strip=True)
 
         if "24" in purity:
-            price_24k = price
+            price_24k = today_price
         elif "22" in purity:
-            price_22k = price
+            price_22k = today_price
 
     if not price_24k or not price_22k:
         raise Exception("Gold prices not extracted correctly")
@@ -54,8 +54,8 @@ if __name__ == "__main__":
 
     msg = (
         "🏅 Bhopal Gold Rate (Today)\n\n"
-        f"24K: {p24}\n"
-        f"22K: {p22}\n\n"
+        f"24K (10g): {p24}\n"
+        f"22K (10g): {p22}\n\n"
         "Source: GoodReturns"
     )
 
